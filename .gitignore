@@ -1,0 +1,17 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.swo
+*.bak
+*.tmp
+*.log
+*.cache
+*.DS_Store
+*.idea/
+*.vscode/
+*.env
+*.venv
+data/outputs/
