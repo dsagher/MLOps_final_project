@@ -46,7 +46,7 @@ Then edit it:
 
 | Variable | Meaning | Example |
 |---|---|---|
-| `BLS_API_KEY` | Your BLS registration key | `abc123...` |
+| `API_KEY` | Your BLS registration key | `abc123...` |
 | `NATIONAL_SERIES_FILE` | Input CSV for `make build_national` | `data/inputs/national_series.csv` |
 | `STATE_SERIES_FILE` | Input CSV for `make build_state` | `data/inputs/state_series.csv` |
 | `DB_DRIVER` | SQLAlchemy driver name | `postgresql+psycopg2` |
@@ -125,9 +125,11 @@ CES,"Total Nonfarm, Seasonally adjusted",SMS01000000000000001,Alabama
 
 ## How it works
 
-1. **Extract**: `BlsApiCall.extract()` batches series IDs (max 50 per request, max 20 years) and POSTs them to the BLS API, retrying on server errors.
-2. **Transform**: the raw response uses camelCase (`seriesID`, `periodName`); `transform()` converts keys to snake_case and builds rows matching the PostgreSQL columns.
-3. **Load**: rows are written with SQLAlchemy using `ON CONFLICT DO NOTHING`, so re-running is safe.
+1. **Extract**: `extract()` in `src/api/extract.py` batches series IDs (max 50 per request, max 20 years) and POSTs them to the BLS API, retrying on server errors.
+2. **Transform**: the raw response uses camelCase (`seriesID`, `periodName`); `transform_results()` and `transform_series()` in `src/api/transform.py` convert keys to snake_case and build rows matching the PostgreSQL columns.
+3. **Load**: `load()` in `src/api/load.py` writes rows with SQLAlchemy using `ON CONFLICT DO NOTHING`, so re-running is safe.
+
+Each stage is a plain function that takes its inputs as arguments and returns its output; `main.py` passes the data between them.
 
 Built-in protections: daily query limit tracking in `data/outputs/runtime_output/query_count.csv` (resets each day), year and series-ID limits, HTTP retry and error logging, and input validation.
 
@@ -148,7 +150,7 @@ Built-in protections: daily query limit tracking in `data/outputs/runtime_output
 │       └── state_scrape_results/
 └── src/
     ├── main.py             # entry point
-    ├── api/                # api_bls.py (ETL), api_types.py, tests/
+    ├── api/                # extract.py, transform.py, load.py, strategies.py, api_types.py, tests/
     ├── scrape/             # state series ID scraper
     └── utils/              # arg parsing, validation, logging, CSV reading
 ```

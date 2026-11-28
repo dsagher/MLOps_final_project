@@ -24,6 +24,7 @@ def make_args(**overrides):
         traceroute=False,
         verbose=False,
         silence=True,
+        latest=False,
     )
     return Namespace(**{**args, **overrides})
 
@@ -100,6 +101,7 @@ class TestArgRouter(unittest.TestCase):
                 "series_count": "",
                 "verbose": False,
                 "silence": True,
+                "latest": False,
             },
         )
 
@@ -112,7 +114,7 @@ class TestArgRouter(unittest.TestCase):
             arg_router()
         self.assertEqual(
             str(e.exception),
-            "Please specify --path, --series-type, --start-year, and --end-year.",
+            "Please specify --path, --series-type, --start-year, and --end-year with the appropriate flags.",
         )
 
     def test_no_args(self, mocked_parser):

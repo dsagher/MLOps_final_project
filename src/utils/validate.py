@@ -64,6 +64,7 @@ def validate_years(start_year: int, end_year: int) -> Tuple[bool, Union[str, Non
     if end_year - start_year + 1 > 20:
         logger.error("Error: Year range cannot exceed 20 years due to API limitations.")
         return False, "Error: Year range cannot exceed 20 years due to API limitations."
+
     else:
         logger.info("Year validation passed.")
         return True, None

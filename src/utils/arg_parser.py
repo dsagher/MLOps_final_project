@@ -90,6 +90,13 @@ def _arg_parser():
         default=False,
     )
 
+    parser.add_argument(
+        "--latest",
+        help="Fetch the most recent survey results from the database.",
+        action="store_true",
+        default=False,
+    )
+
     return parser.parse_args()
 
 
@@ -110,14 +117,42 @@ def arg_router():
         subprocess.run(args=["traceroute", "api.bls.gov"], stdout=sys.stdout)
         sys.exit()
 
-    if not (args.path and args.series_type and args.start_year and args.end_year):
-        logger.error(
-            "Error: Not enough information provided in Command Line Arguments."
-        )
-        raise ValueError(
-            "Please specify --path, --series-type, --start-year, and --end-year."
+    if not args.latest:
+        if not (args.path and args.series_type and args.start_year and args.end_year):
+            logger.error(
+                "Error: Not enough information provided in Command Line Arguments."
+            )
+            raise ValueError(
+                "Please specify --path, --series-type, --start-year, and --end-year with the appropriate flags."
+            )
+    if not args.latest:
+        user_input = {
+            "path": args.path,
+            "series_type": args.series_type,
+            "start_year": args.start_year,
+            "end_year": args.end_year,
+            "series_count": args.series_count or "",
+            "verbose": args.verbose,
+            "silence": args.silence,
+            "latest": args.latest,
+        }
+        path_valid, path_message = validate_path(user_input["path"])
+        years_valid, years_message = validate_years(
+            user_input["start_year"], user_input["end_year"]
         )
 
+        if not path_valid:
+            logger.error(path_message)
+            raise FileNotFoundError(path_message)
+
+        if not years_valid:
+            logger.error(years_message)
+            raise ValueError(years_message)
+    if args.latest and (args.start_year or args.end_year):
+        logger.error("Error: Cannot specify --latest with --start-year or --end-year.")
+        raise ValueError(
+            "Please do not specify --start-year or --end-year when using --latest."
+        )
     user_input = {
         "path": args.path,
         "series_type": args.series_type,
@@ -126,22 +161,9 @@ def arg_router():
         "series_count": args.series_count or "",
         "verbose": args.verbose,
         "silence": args.silence,
+        "latest": args.latest,
     }
     logger.info(f"Using command line arguments: {user_input}")
 
-    path_valid, path_message = validate_path(user_input["path"])
-    years_valid, years_message = validate_years(
-        user_input["start_year"], user_input["end_year"]
-    )
-
-    if not path_valid:
-        logger.error(path_message)
-        print(path_message)
-        raise FileNotFoundError(path_message)
-
-    if not years_valid:
-        logger.error(years_message)
-        print(years_message)
-        raise ValueError(years_message)
     logger.info("Returning validated user input")
     return user_input
